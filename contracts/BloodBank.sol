@@ -10,7 +10,15 @@ contract BloodBank {
         bool isAvailable;
     }
 
+    struct Hospital {
+        string name;
+        string location;
+        string contact;
+    }
+
     mapping(address => Donor) public donors;
+    mapping(address => Hospital) public hospitals;
+    mapping(string => bool) public bloodAvailability;
     address[] public donorList;
 
     event DonorRegistered(address indexed donorAddress, string name, string bloodType);
@@ -42,5 +50,22 @@ contract BloodBank {
     function getDonorDetails(address _donor) public view returns (string memory, uint, string memory, string memory, bool) {
         Donor memory d = donors[_donor];
         return (d.name, d.age, d.bloodType, d.location, d.isAvailable);
+    }
+
+    function registerHospital(string memory _name, string memory _location, string memory _contact) public {
+        hospitals[msg.sender] = Hospital(_name, _location, _contact);
+    }
+
+    function getHospitalDetails(address _hospitalAddress) public view returns (string memory, string memory, string memory) {
+        Hospital memory hospital = hospitals[_hospitalAddress];
+        return (hospital.name, hospital.location, hospital.contact);
+    }
+
+    function checkBloodAvailability(string memory _bloodType) public view returns (bool) {
+        return bloodAvailability[_bloodType];
+    }
+
+    function updateBloodAvailability(string memory _bloodType, bool _availability) public {
+        bloodAvailability[_bloodType] = _availability;
     }
 }
