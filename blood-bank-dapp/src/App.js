@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Web3 from 'web3';
-import bloodBankABI from './abis/BloodBank.json'; // Import ABI from the 'abis' folder
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styled from 'styled-components';
 import { Bar } from 'react-chartjs-2';
@@ -25,49 +23,11 @@ const AppContainer = styled.div`
 `;
 
 function App() {
-  const [web3, setWeb3] = useState(null);
-  const [account, setAccount] = useState(null);
-  const [contract, setContract] = useState(null);
   const [donors, setDonors] = useState([]);
   const [hospitals, setHospitals] = useState([]);
   const [bloodAvailability, setBloodAvailability] = useState({});
 
-  const contractAddress = "YOUR_NEW_CONTRACT_ADDRESS"; // Replace with your new contract address
-
   useEffect(() => {
-    const initWeb3 = async () => {
-      // Connect to Web3 using MetaMask
-      if (window.ethereum) {
-        try {
-          const web3Instance = new Web3(window.ethereum);
-          await window.ethereum.request({ method: 'eth_requestAccounts' }); // Request access to user accounts
-          setWeb3(web3Instance);
-          
-          const accounts = await web3Instance.eth.getAccounts();
-          setAccount(accounts[0]);
-          
-          const contractInstance = new web3Instance.eth.Contract(bloodBankABI.abi, contractAddress);
-          setContract(contractInstance);
-
-          // Listen for account changes
-          window.ethereum.on('accountsChanged', (accounts) => {
-            setAccount(accounts[0]);
-          });
-
-          // Listen for network changes
-          window.ethereum.on('chainChanged', () => {
-            window.location.reload();
-          });
-        } catch (error) {
-          console.error("User denied account access or error occurred", error);
-          alert("Please allow MetaMask access to use this DApp.");
-        }
-      } else {
-        alert("Please install MetaMask!");
-      }
-    };
-    
-    initWeb3();
     fetchDonors();
     fetchHospitals();
     fetchBloodAvailability();
