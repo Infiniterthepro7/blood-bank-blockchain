@@ -1,15 +1,19 @@
 const express = require('express');
-const cors = require('cors');
+const bodyParser = require('body-parser');
 const { Pool } = require('pg');
+const cors = require('cors');
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = 5000;
+
+app.use(cors());
+app.use(bodyParser.json());
 
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
   database: 'blood_bank',
-  password: 'aryan@123',
+  password: 'aryan@123', // Replace with your actual database password
   port: 5432,
 });
 
@@ -22,16 +26,39 @@ pool.query('SELECT NOW()', (err, res) => {
   }
 });
 
-app.use(cors());
-app.use(express.json());
-
-// Fetch all donors
+// API endpoint to fetch all donors
 app.get('/api/donors', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM donors');
     res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching donors:', err.message);
+    console.error('Error fetching donors:', err);
+    res.status(500).send('Server error');
+  }
+});
+
+// API endpoint to fetch all hospitals
+app.get('/api/hospitals', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM hospitals');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching hospitals:', err);
+    res.status(500).send('Server error');
+  }
+});
+
+// API endpoint to fetch blood availability
+app.get('/api/blood-availability', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT blood_type, COUNT(*) as count FROM donors GROUP BY blood_type');
+    const bloodAvailability = {};
+    result.rows.forEach(row => {
+      bloodAvailability[row.blood_type] = parseInt(row.count, 10);
+    });
+    res.json(bloodAvailability);
+  } catch (err) {
+    console.error('Error fetching blood availability:', err);
     res.status(500).send('Server error');
   }
 });

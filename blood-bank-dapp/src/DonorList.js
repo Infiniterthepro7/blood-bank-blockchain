@@ -21,9 +21,9 @@ function DonorList() {
   return (
     <div>
       <h2>Donor List</h2>
-      <ul>
+      <ul className="list-group">
         {donors.map((donor) => (
-          <li key={donor.id}>
+          <li key={donor.id} className="list-group-item">
             {donor.name} - {donor.age} - {donor.blood_type} - {donor.location}
           </li>
         ))}

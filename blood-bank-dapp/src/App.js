@@ -9,12 +9,14 @@ import 'react-toastify/dist/ReactToastify.css';
 import styled from 'styled-components';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-import DonorList from './DonorList'; // Import DonorList component
+import DonorList from './DonorList';
+import DonorForm from './DonorForm';
+import Navbar from './Navbar';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const AppContainer = styled.div`
-  max-width: 800px;
+  max-width: 1200px;
   margin: 50px auto;
   padding: 20px;
   background-color: rgba(255, 255, 255, 0.9);
@@ -29,10 +31,6 @@ function App() {
   const [donors, setDonors] = useState([]);
   const [hospitals, setHospitals] = useState([]);
   const [bloodAvailability, setBloodAvailability] = useState({});
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
-  const [bloodType, setBloodType] = useState('');
-  const [location, setLocation] = useState('');
 
   const contractAddress = "YOUR_NEW_CONTRACT_ADDRESS"; // Replace with your new contract address
 
@@ -75,47 +73,13 @@ function App() {
     fetchBloodAvailability();
   }, []);
 
-  // Function to register a donor on the blockchain
-  const registerDonorOnBlockchain = async () => {
-    if (contract && account) {
-      try {
-        await contract.methods.registerDonor(name, age, bloodType, location).send({ from: account });
-        toast.success('Donor registered on blockchain successfully!');
-      } catch (error) {
-        console.error('Error registering donor on blockchain:', error);
-        toast.error('Failed to register donor on blockchain.');
-      }
-    }
-  };
-
-  // Function to register a donor
-  const registerDonor = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('http://localhost:5000/api/donors/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, age, bloodType, location }),
-      });
-      await response.json();
-      toast.success('Donor registered successfully!');
-      fetchDonors();
-      registerDonorOnBlockchain(); // Register donor on blockchain
-    } catch (error) {
-      console.error('Error registering donor:', error);
-      toast.error('Failed to register donor.');
-    }
-  };
-
   // Function to fetch all donors
   const fetchDonors = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/donors');
       setDonors(response.data);
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching donors:', error);
       alert("Error fetching donors.");
     }
   };
@@ -126,7 +90,7 @@ function App() {
       const response = await axios.get('http://localhost:5000/api/hospitals');
       setHospitals(response.data);
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching hospitals:', error);
       alert("Error fetching hospitals.");
     }
   };
@@ -137,20 +101,8 @@ function App() {
       const response = await axios.get('http://localhost:5000/api/blood-availability');
       setBloodAvailability(response.data);
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching blood availability:', error);
       alert("Error fetching blood availability.");
-    }
-  };
-
-  // Function to fetch donor details from the blockchain
-  const fetchDonorDetailsFromBlockchain = async (donorId) => {
-    if (contract) {
-      try {
-        const donorDetails = await contract.methods.getDonor(donorId).call();
-        console.log('Donor details from blockchain:', donorDetails);
-      } catch (error) {
-        console.error('Error fetching donor details from blockchain:', error);
-      }
     }
   };
 
@@ -184,48 +136,25 @@ function App() {
   };
 
   return (
-    <AppContainer>
-      <h1>Blood Bank</h1>
-      <form onSubmit={registerDonor}>
-        <div>
-          <label>Name:</label>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
-        </div>
-        <div>
-          <label>Age:</label>
-          <input type="number" value={age} onChange={(e) => setAge(e.target.value)} required />
-        </div>
-        <div>
-          <label>Blood Type:</label>
-          <input type="text" value={bloodType} onChange={(e) => setBloodType(e.target.value)} required />
-        </div>
-        <div>
-          <label>Location:</label>
-          <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} required />
-        </div>
-        <button type="submit">Register Donor</button>
-      </form>
-      <DonorList /> {/* Add DonorList component */}
-      <h2>Donors</h2>
-      <ul className="list-group">
-        {donors.map((donor) => (
-          <li key={donor.id} className="list-group-item" onClick={() => fetchDonorDetailsFromBlockchain(donor.id)}>
-            {donor.name} - {donor.bloodType} - {donor.location}
-          </li>
-        ))}
-      </ul>
-      <h2>Hospitals</h2>
-      <ul className="list-group">
-        {hospitals.map((hospital) => (
-          <li key={hospital.id} className="list-group-item">
-            {hospital.name} - {hospital.location}
-          </li>
-        ))}
-      </ul>
-      <h2>Blood Type Availability</h2>
-      <Bar data={data} options={options} />
-      <ToastContainer />
-    </AppContainer>
+    <>
+      <Navbar />
+      <AppContainer>
+        <h1>Blood Bank</h1>
+        <DonorForm fetchDonors={fetchDonors} />
+        <DonorList donors={donors} />
+        <h2>Hospitals</h2>
+        <ul className="list-group">
+          {hospitals.map((hospital) => (
+            <li key={hospital.id} className="list-group-item">
+              {hospital.name} - {hospital.location}
+            </li>
+          ))}
+        </ul>
+        <h2>Blood Type Availability</h2>
+        <Bar data={data} options={options} />
+        <ToastContainer />
+      </AppContainer>
+    </>
   );
 }
 
