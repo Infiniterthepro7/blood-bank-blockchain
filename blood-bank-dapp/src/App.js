@@ -7,6 +7,11 @@ import './App.css';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styled from 'styled-components';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import DonorList from './DonorList'; // Import DonorList component
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const AppContainer = styled.div`
   max-width: 800px;
@@ -22,6 +27,8 @@ function App() {
   const [account, setAccount] = useState(null);
   const [contract, setContract] = useState(null);
   const [donors, setDonors] = useState([]);
+  const [hospitals, setHospitals] = useState([]);
+  const [bloodAvailability, setBloodAvailability] = useState({});
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [bloodType, setBloodType] = useState('');
@@ -64,6 +71,8 @@ function App() {
     
     initWeb3();
     fetchDonors();
+    fetchHospitals();
+    fetchBloodAvailability();
   }, []);
 
   // Function to register a donor on the blockchain
@@ -83,7 +92,7 @@ function App() {
   const registerDonor = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://your-backend.herokuapp.com/api/donors/register', {
+      const response = await fetch('http://localhost:5000/api/donors/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,6 +120,28 @@ function App() {
     }
   };
 
+  // Function to fetch all hospitals
+  const fetchHospitals = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/hospitals');
+      setHospitals(response.data);
+    } catch (error) {
+      console.error(error);
+      alert("Error fetching hospitals.");
+    }
+  };
+
+  // Function to fetch blood availability
+  const fetchBloodAvailability = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/blood-availability');
+      setBloodAvailability(response.data);
+    } catch (error) {
+      console.error(error);
+      alert("Error fetching blood availability.");
+    }
+  };
+
   // Function to fetch donor details from the blockchain
   const fetchDonorDetailsFromBlockchain = async (donorId) => {
     if (contract) {
@@ -123,54 +154,58 @@ function App() {
     }
   };
 
+  const bloodTypes = Object.keys(bloodAvailability);
+  const bloodCounts = Object.values(bloodAvailability);
+
+  const data = {
+    labels: bloodTypes,
+    datasets: [
+      {
+        label: 'Blood Availability',
+        data: bloodCounts,
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Blood Type Availability',
+      },
+    },
+  };
+
   return (
     <AppContainer>
       <h1>Blood Bank</h1>
       <form onSubmit={registerDonor}>
-        <div className="form-group">
-          <label>Name</label>
-          <input
-            type="text"
-            className="form-control"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
+        <div>
+          <label>Name:</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
-        <div className="form-group">
-          <label>Age</label>
-          <input
-            type="number"
-            className="form-control"
-            value={age}
-            onChange={(e) => setAge(e.target.value)}
-            required
-          />
+        <div>
+          <label>Age:</label>
+          <input type="number" value={age} onChange={(e) => setAge(e.target.value)} required />
         </div>
-        <div className="form-group">
-          <label>Blood Type</label>
-          <input
-            type="text"
-            className="form-control"
-            value={bloodType}
-            onChange={(e) => setBloodType(e.target.value)}
-            required
-          />
+        <div>
+          <label>Blood Type:</label>
+          <input type="text" value={bloodType} onChange={(e) => setBloodType(e.target.value)} required />
         </div>
-        <div className="form-group">
-          <label>Location</label>
-          <input
-            type="text"
-            className="form-control"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            required
-          />
+        <div>
+          <label>Location:</label>
+          <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} required />
         </div>
-        <button type="submit" className="btn btn-primary">
-          Register Donor
-        </button>
+        <button type="submit">Register Donor</button>
       </form>
+      <DonorList /> {/* Add DonorList component */}
       <h2>Donors</h2>
       <ul className="list-group">
         {donors.map((donor) => (
@@ -179,6 +214,16 @@ function App() {
           </li>
         ))}
       </ul>
+      <h2>Hospitals</h2>
+      <ul className="list-group">
+        {hospitals.map((hospital) => (
+          <li key={hospital.id} className="list-group-item">
+            {hospital.name} - {hospital.location}
+          </li>
+        ))}
+      </ul>
+      <h2>Blood Type Availability</h2>
+      <Bar data={data} options={options} />
       <ToastContainer />
     </AppContainer>
   );
